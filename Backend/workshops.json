@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Python for Beginners",
+        "date": "2025-07-26",
+        "time": "14:00",
+        "instructor": "John Doe",
+        "place": "Lab 1",
+        "description": "An introduction to the Python programming language, covering variables, loops, and functions."
+    },
+    {
+        "name": "Effective Leadership",
+        "date": "2025-07-27",
+        "time": "10:00",
+        "instructor": "Jane Roe",
+        "place": "Room 3",
+        "description": "Learn the core principles of leading and motivating high-performing teams."
+    },
+    {
+        "name": "Introductory Biology",
+        "date": "2025-07-28",
+        "time": "09:00",
+        "instructor": "Dr. Smith",
+        "place": "Bio Lab",
+        "description": "Explore the fundamental concepts of biology, from cells to ecosystems."
+    },
+    {
+        "name": "Digital Photography Basics",
+        "date": "2025-07-29",
+        "time": "16:00",
+        "instructor": "Alex Cam",
+        "place": "Studio A",
+        "description": "Master the basics of your DSLR camera, including aperture, shutter speed, and ISO."
+    },
+    {
+        "name": "Past Workshop Example",
+        "date": "2024-01-15",
+        "time": "11:00",
+        "instructor": "Old Timer",
+        "place": "Archive Room",
+        "description": "This is a workshop that has already passed."
+    }
+]
