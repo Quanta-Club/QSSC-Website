@@ -5,13 +5,10 @@ const moment = require("moment-timezone");
 const fs = require("fs");
 const path = require("path");
 
-// --- In-Memory Database ---
-// For demonstration on Render without a persistent database.
-// This will reset every time the server restarts or sleeps.
-const db = {
-  users: [],
-};
-let userIdCounter = 1;
+// --- File Paths ---
+// Define paths to our JSON data files for cleaner access.
+const usersPath = path.join(__dirname, 'users.json');
+const workshopsPath = path.join(__dirname, 'workshops.json');
 
 // --- Express App Initialization ---
 const app = express();
@@ -24,15 +21,51 @@ const registrationSchema = Joi.object({
   email: Joi.string().trim().email().required(),
 });
 
+// --- Helper Functions for File I/O ---
+
+/**
+ * Reads user data from users.json.
+ * If the file doesn't exist, it returns an empty array.
+ * @returns {Array} Array of user objects.
+ */
+const readUsers = () => {
+  try {
+    if (!fs.existsSync(usersPath)) {
+      return [];
+    }
+    const data = fs.readFileSync(usersPath, 'utf8');
+    // If the file is empty, return an empty array
+    if (!data) {
+        return [];
+    }
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Error reading users file:", error);
+    return []; // Return empty array on error to prevent crashes
+  }
+};
+
+/**
+ * Writes an array of user data to users.json.
+ * @param {Array} users - The array of users to write to the file.
+ */
+const writeUsers = (users) => {
+  try {
+    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.error("Error writing to users file:", error);
+  }
+};
+
+
 // --- API Routes ---
 
 app.get("/", (req, res) => {
-  res.status(200).send("API is running!");
+  res.status(200).send("API is running and connected to local JSON files!");
 });
 
-
 /**
- * Registers a new user after validation.
+ * Registers a new user after validation and saves to users.json.
  */
 app.post("/register", (req, res) => {
   // 1. Validate request body
@@ -43,23 +76,33 @@ app.post("/register", (req, res) => {
 
   const { username, email } = value;
 
-  // 2. Check for email uniqueness in our in-memory store
-  if (db.users.some(user => user.email === email)) {
-    return res.status(400).json({ error: `Email '${email}' already exists.` });
+  try {
+    const users = readUsers();
+
+    // 2. Check for email uniqueness in our file
+    if (users.some(user => user.email === email)) {
+      return res.status(400).json({ error: `Email '${email}' already exists.` });
+    }
+
+    // 3. Store new user
+    const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+    const newUser = {
+      id: newId,
+      username,
+      email,
+      createdAt: new Date().toISOString(),
+    };
+    
+    users.push(newUser);
+    writeUsers(users); // Write the updated list back to the file
+
+    // 4. Return successful response
+    return res.status(201).json(newUser);
+
+  } catch (err) {
+      console.error("Registration Error:", err);
+      return res.status(500).json({ error: "An internal server error occurred." });
   }
-
-  // 3. Store new user
-  const newUser = {
-    id: userIdCounter++,
-    username,
-    email,
-    createdAt: new Date().toISOString(),
-  };
-  db.users.push(newUser);
-  console.log("Current users:", db.users);
-
-  // 4. Return successful response
-  return res.status(201).json(newUser);
 });
 
 /**
@@ -67,11 +110,8 @@ app.post("/register", (req, res) => {
  */
 app.get("/workshops", (req, res) => {
   try {
-    // 1. Load static workshop data
-    const dataPath = path.join(__dirname, "workshops.json");
-    const workshopsData = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+    const workshopsData = JSON.parse(fs.readFileSync(workshopsPath, "utf8"));
 
-    // 2. Determine workshop status
     const nowUtc = moment.tz("UTC");
     const workshopDurationHours = 2;
 

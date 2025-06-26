@@ -1,5 +1,5 @@
 # Dependencies
-/node_modules
+node_modules/
 
 # Environment variables
 .env
@@ -11,3 +11,6 @@ yarn-error.log
 
 # Optional files
 .DS_Store
+
+#json
+users.json
