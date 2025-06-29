@@ -15,4 +15,3 @@ yarn-error.log
 #json
 users.json
 firebase.json
-firebase-admin.js

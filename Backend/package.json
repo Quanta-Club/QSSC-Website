@@ -1,7 +1,7 @@
 {
   "name": "api-server",
   "version": "1.0.0",
-  "description": "A simple API server for workshop registrations using local JSON files.",
+  "description": "A simple API server for workshop registrations.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -13,7 +13,7 @@
     "json",
     "render"
   ],
-  "author": "Your Name",
+  "author": "khalil",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
