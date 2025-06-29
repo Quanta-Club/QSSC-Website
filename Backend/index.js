@@ -2,78 +2,41 @@ const express = require("express");
 const cors = require("cors");
 const Joi = require("joi");
 const moment = require("moment-timezone");
-const fs = require("fs");
-const path = require("path");
+const admin = require("firebase-admin");
 
-// --- File Paths ---
-// Define paths to our JSON data files for cleaner access.
-const usersPath = path.join(__dirname, 'users.json');
-const workshopsPath = path.join(__dirname, 'workshops.json');
+// --- Firebase Initialization ---
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+
+const db = admin.firestore();
+const usersCollection = db.collection("users");
 
 // --- Express App Initialization ---
 const app = express();
-app.use(cors()); // Enable CORS for all routes
-app.use(express.json()); // Middleware to parse JSON bodies
+app.use(cors());
+app.use(express.json());
 
 // --- Validation Schema ---
 const registrationSchema = Joi.object({
   username: Joi.string().trim().min(1).required(),
   email: Joi.string().trim().email().required(),
-  phone: Joi.string().trim().min(5).required(), // You can add regex for format
+  phone: Joi.string().trim().min(5).required(),
   level: Joi.string().trim().required(),
   club: Joi.string().trim().required(),
-  motivation: Joi.string().trim().min(10).required(), // Ensures meaningful input
+  motivation: Joi.string().trim().min(10).required(),
 });
-
-
-// --- Helper Functions for File I/O ---
-
-/**
- * Reads user data from users.json.
- * If the file doesn't exist, it returns an empty array.
- * @returns {Array} Array of user objects.
- */
-const readUsers = () => {
-  try {
-    if (!fs.existsSync(usersPath)) {
-      return [];
-    }
-    const data = fs.readFileSync(usersPath, 'utf8');
-    // If the file is empty, return an empty array
-    if (!data) {
-        return [];
-    }
-    return JSON.parse(data);
-  } catch (error) {
-    console.error("Error reading users file:", error);
-    return []; // Return empty array on error to prevent crashes
-  }
-};
-
-/**
- * Writes an array of user data to users.json.
- * @param {Array} users - The array of users to write to the file.
- */
-const writeUsers = (users) => {
-  try {
-    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-  } catch (error) {
-    console.error("Error writing to users file:", error);
-  }
-};
-
 
 // --- API Routes ---
-
 app.get("/", (req, res) => {
-  res.status(200).send("API is running and connected to local JSON files!");
+  res.status(200).send("API is running and connected to Firestore!");
 });
 
-/**
- * Registers a new user after validation and saves to users.json.
- */
-app.post("/register", (req, res) => {
-  // 1. Validate request body
+// --- Register New User ---
+app.post("/register", async (req, res) => {
   const { error, value } = registrationSchema.validate(req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
@@ -82,17 +45,14 @@ app.post("/register", (req, res) => {
   const { username, email, phone, level, club, motivation } = value;
 
   try {
-    const users = readUsers();
-
-    // 2. Check for email uniqueness in our file
-    if (users.some(user => user.email === email)) {
+    // Check for existing email
+    const snapshot = await usersCollection.where("email", "==", email).get();
+    if (!snapshot.empty) {
       return res.status(400).json({ error: `Email '${email}' already exists.` });
     }
 
-    // 3. Store new user
-    const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+    // Add new user
     const newUser = {
-      id: newId,
       username,
       email,
       phone,
@@ -101,30 +61,29 @@ app.post("/register", (req, res) => {
       motivation,
       createdAt: new Date().toISOString(),
     };
-    
-    users.push(newUser);
-    writeUsers(users); // Write the updated list back to the file
 
-    // 4. Return successful response
+    const docRef = await usersCollection.add(newUser);
+    newUser.id = docRef.id; // Attach generated Firestore ID
+
     return res.status(201).json(newUser);
 
   } catch (err) {
-      console.error("Registration Error:", err);
-      return res.status(500).json({ error: "An internal server error occurred." });
+    console.error("Registration Error:", err);
+    return res.status(500).json({ error: "An internal server error occurred." });
   }
 });
 
-
-app.get("/1255789223457123484893754", (req, res) => {    // users
+// --- Get All Users ---
+app.get("/1255789223457123484893754", async (req, res) => {
   try {
-    const users = readUsers(); // Reuse the helper function
+    const snapshot = await usersCollection.get();
+    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return res.status(200).json(users);
   } catch (error) {
     console.error("Error retrieving users:", error);
     return res.status(500).json({ error: "Could not retrieve users." });
   }
 });
-
 
 // --- Server Initialization ---
 const PORT = process.env.PORT || 3000;
