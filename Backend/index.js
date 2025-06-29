@@ -19,7 +19,12 @@ app.use(express.json()); // Middleware to parse JSON bodies
 const registrationSchema = Joi.object({
   username: Joi.string().trim().min(1).required(),
   email: Joi.string().trim().email().required(),
+  phone: Joi.string().trim().min(5).required(), // You can add regex for format
+  level: Joi.string().trim().required(),
+  club: Joi.string().trim().required(),
+  motivation: Joi.string().trim().min(10).required(), // Ensures meaningful input
 });
+
 
 // --- Helper Functions for File I/O ---
 
@@ -74,7 +79,7 @@ app.post("/register", (req, res) => {
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  const { username, email } = value;
+  const { username, email, phone, level, club, motivation } = value;
 
   try {
     const users = readUsers();
@@ -90,6 +95,10 @@ app.post("/register", (req, res) => {
       id: newId,
       username,
       email,
+      phone,
+      level,
+      club,
+      motivation,
       createdAt: new Date().toISOString(),
     };
     
@@ -105,33 +114,14 @@ app.post("/register", (req, res) => {
   }
 });
 
-/**
- * Lists all workshops with a dynamic status.
- */
-app.get("/workshops", (req, res) => {
+
+app.get("/1255789223457123484893754", (req, res) => {    // users
   try {
-    const workshopsData = JSON.parse(fs.readFileSync(workshopsPath, "utf8"));
-
-    const nowUtc = moment.tz("UTC");
-    const workshopDurationHours = 2;
-
-    const processedWorkshops = workshopsData.map(ws => {
-      const workshopStartUtc = moment.tz(`${ws.date} ${ws.time}`, "YYYY-MM-DD HH:mm", "UTC");
-      const workshopEndUtc = workshopStartUtc.clone().add(workshopDurationHours, "hours");
-
-      let status = "passed";
-      if (nowUtc.isBetween(workshopStartUtc, workshopEndUtc)) {
-        status = "running";
-      } else if (nowUtc.isBefore(workshopStartUtc)) {
-        status = "upcoming";
-      }
-      return { ...ws, status };
-    });
-
-    return res.status(200).json(processedWorkshops);
-  } catch (err) {
-    console.error("Workshop Loading Error:", err);
-    return res.status(500).json({ error: "Could not load workshop data." });
+    const users = readUsers(); // Reuse the helper function
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error("Error retrieving users:", error);
+    return res.status(500).json({ error: "Could not retrieve users." });
   }
 });
 
