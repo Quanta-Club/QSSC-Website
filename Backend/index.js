@@ -28,7 +28,9 @@ const registrationSchema = Joi.object({
   level: Joi.string().trim().required(),
   club: Joi.string().trim().required(),
   motivation: Joi.string().trim().min(10).required(),
+  hasLaptop: Joi.boolean().required(), // <-- New Field
 });
+
 
 // --- API Routes ---
 app.get("/", (req, res) => {
@@ -42,7 +44,7 @@ app.post("/register", async (req, res) => {
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  const { username, email, phone, level, club, motivation } = value;
+  const { username, email, phone, level, club, motivation, hasLaptop } = value;
 
   try {
     // Check for existing email
@@ -59,11 +61,12 @@ app.post("/register", async (req, res) => {
       level,
       club,
       motivation,
+      hasLaptop, 
       createdAt: new Date().toISOString(),
     };
 
     const docRef = await usersCollection.add(newUser);
-    newUser.id = docRef.id; // Attach generated Firestore ID
+    newUser.id = docRef.id;
 
     return res.status(201).json(newUser);
 
