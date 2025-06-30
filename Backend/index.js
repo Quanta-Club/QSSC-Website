@@ -90,21 +90,21 @@ app.get("/1255789223457123484893754", async (req, res) => {
 });
 
 // --- Reset All Users' Acceptance Status ---
-app.post("/addANDreset", async (req, res) => {
-  try {
-    const snapshot = await usersCollection.get();
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => {
-      // Use set with { merge: true } to add the field if it's missing, or update it if it exists.
-      batch.set(doc.ref, { accepted: null }, { merge: true }); 
-    });
-    await batch.commit();
-    return res.status(200).json({ message: "All users now have the 'accepted' field set to null." });
-  } catch (error) {
-    console.error("Error resetting users:", error);
-    return res.status(500).json({ error: "Could not reset users' acceptance status." });
-  }
-});
+// app.post("/addANDreset", async (req, res) => {
+//   try {
+//     const snapshot = await usersCollection.get();
+//     const batch = db.batch();
+//     snapshot.docs.forEach(doc => {
+//       // Use set with { merge: true } to add the field if it's missing, or update it if it exists.
+//       batch.set(doc.ref, { accepted: null }, { merge: true }); 
+//     });
+//     await batch.commit();
+//     return res.status(200).json({ message: "All users now have the 'accepted' field set to null." });
+//   } catch (error) {
+//     console.error("Error resetting users:", error);
+//     return res.status(500).json({ error: "Could not reset users' acceptance status." });
+//   }
+// });
 
 // --- Get All Accepted Users ---
 app.get("/listaccepted", async (req, res) => {

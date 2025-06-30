@@ -15,3 +15,5 @@ yarn-error.log
 #json
 users.json
 firebase.json
+GETDB.js
+firestore-export.json
